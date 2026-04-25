@@ -57,4 +57,71 @@ class IngresarMascotaController: UIViewController {
         }
     }
     
+    
+    
+    
+    @IBOutlet weak var txtNombreMascota: UITextField!
+    
+    @IBOutlet weak var txtEspecie: UITextField!
+    
+    @IBOutlet weak var txtAlergias: UITextField!
+    
+    @IBOutlet weak var txtApodosMascota: UITextField!
+    
+    
+    
+    @IBOutlet weak var btnRegistrarMascota: UIButton!
+    
+
+    
+    
+    // MARK: - Acción Registrar Mascota
+        @IBAction func registrarMascota(_ sender: UIButton) {
+            
+            let nombre = txtNombreMascota.text ?? ""
+            let especie = txtEspecie.text ?? ""
+            let alergias = txtAlergias.text ?? ""
+            let apodos = txtApodosMascota.text ?? ""
+            
+            // 1. Validar solo campos obligatorios
+            if nombre.isEmpty || especie.isEmpty {
+                mostrarAlerta(mensaje: "Por favor, completa los campos obligatorios (Nombre y Especie).")
+                return
+            }
+            
+            // 2. Registro simulado (por ahora)
+            print("Mascota registrada:")
+            print("Nombre: \(nombre)")
+            print("Especie: \(especie)")
+            print("Alergias: \(alergias)")
+            print("Apodos: \(apodos)")
+            
+            // 3. Confirmación al usuario
+            mostrarAlerta(mensaje: "Mascota registrada correctamente.") {
+                self.limpiarCampos()
+            }
+        }
+        
+        // MARK: - Limpiar campos
+        func limpiarCampos() {
+            txtNombreMascota.text = ""
+            txtEspecie.text = ""
+            txtAlergias.text = ""
+            txtApodosMascota.text = ""
+        }
+        
+        // MARK: - Alertas reutilizables
+        func mostrarAlerta(mensaje: String, completion: (() -> Void)? = nil) {
+            let alerta = UIAlertController(title: "Aviso", message: mensaje, preferredStyle: .alert)
+            
+            let accion = UIAlertAction(title: "OK", style: .default) { _ in
+                completion?()
+            }
+            
+            alerta.addAction(accion)
+            present(alerta, animated: true)
+        }
+    
+
+    
 }
