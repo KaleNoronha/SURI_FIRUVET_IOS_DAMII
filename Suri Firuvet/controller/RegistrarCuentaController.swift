@@ -13,7 +13,7 @@ class RegistrarCuentaController: UIViewController {
 
     @IBOutlet weak var txtNombreCompleto: UITextField!
     @IBOutlet weak var txtFechaNacimiento: UITextField!
-    @IBOutlet weak var txtNickUsuario: UITextField!
+    @IBOutlet weak var txtCorreoUsuario: UITextField!
     @IBOutlet weak var txtContrasenia: UITextField!
     @IBOutlet weak var txtRepetirContrasenia: UITextField!
     @IBOutlet weak var opAceptarTeryCon: UISwitch!
@@ -29,7 +29,7 @@ class RegistrarCuentaController: UIViewController {
     @IBAction func crearCuenta(_ sender: UIButton) {
         let nombre = txtNombreCompleto.text?.trimmingCharacters(in: .whitespaces) ?? ""
         let fecha = txtFechaNacimiento.text?.trimmingCharacters(in: .whitespaces) ?? ""
-        let email = txtNickUsuario.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        let email = txtCorreoUsuario.text?.trimmingCharacters(in: .whitespaces) ?? ""
         let pass = txtContrasenia.text ?? ""
         let repetirPass = txtRepetirContrasenia.text ?? ""
 

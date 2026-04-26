@@ -2,7 +2,7 @@ import UIKit
 import FirebaseAuth
 
 class ViewController: UIViewController {
-    @IBOutlet weak var txtNickUsuario: UITextField!
+    @IBOutlet weak var txtCorreoUsuario: UITextField!
     @IBOutlet weak var txtContrasenia: UITextField!
     @IBOutlet weak var btnIngresarSistema: UIButton!
     @IBOutlet weak var btnRegistrarNuevaCuenta: UIButton!
@@ -13,7 +13,7 @@ class ViewController: UIViewController {
     }
     
     @IBAction func ingresarSistema(_ sender: UIButton) {
-        let email = txtNickUsuario.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        let email = txtCorreoUsuario.text?.trimmingCharacters(in: .whitespaces) ?? ""
         let pass = txtContrasenia.text ?? ""
         
         guard !email.isEmpty, !pass.isEmpty else {
