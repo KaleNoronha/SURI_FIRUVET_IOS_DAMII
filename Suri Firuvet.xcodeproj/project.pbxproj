@@ -6,8 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		B76E03E22F8ACA6200BD9A69 /* CoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B76E03E12F8ACA6200BD9A69 /* CoreData.framework */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		B76E03BA2F8ACA6200BD9A69 /* Suri Firuvet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Suri Firuvet.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		B76E03E12F8ACA6200BD9A69 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -36,6 +41,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B76E03E22F8ACA6200BD9A69 /* CoreData.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -47,6 +53,7 @@
 			children = (
 				B76E03BC2F8ACA6200BD9A69 /* Suri Firuvet */,
 				B76E03BB2F8ACA6200BD9A69 /* Products */,
+				B76E03E32F8ACA6200BD9A69 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -56,6 +63,14 @@
 				B76E03BA2F8ACA6200BD9A69 /* Suri Firuvet.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		B76E03E32F8ACA6200BD9A69 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				B76E03E12F8ACA6200BD9A69 /* CoreData.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
