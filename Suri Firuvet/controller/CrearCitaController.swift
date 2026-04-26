@@ -1,4 +1,5 @@
 import UIKit
+import FirebaseAuth
 
 class CrearCitaController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSource {
     
@@ -86,7 +87,12 @@ class CrearCitaController: UIViewController, UIPickerViewDelegate, UIPickerViewD
                     return
                 }
                 
+                guard let uid = Auth.auth().currentUser?.uid else {
+                    mostrarMensaje(titulo: "Error", mensaje: "No hay sesión activa.")
+                    return
+                }
                 CoreDataManager.shared.insertarCita(
+                    uid: uid,
                     mascota: mascotaSeleccionada,
                     fecha: dpFechaHora?.date ?? Date(),
                     lugar: lugarSeleccionado,

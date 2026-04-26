@@ -6,93 +6,83 @@
 //
 
 import UIKit
+import FirebaseAuth
+import FirebaseFirestore
 
 class RegistrarCuentaController: UIViewController {
 
-    
-    
     @IBOutlet weak var txtNombreCompleto: UITextField!
-    
     @IBOutlet weak var txtFechaNacimiento: UITextField!
-    
     @IBOutlet weak var txtNickUsuario: UITextField!
-    
     @IBOutlet weak var txtContrasenia: UITextField!
-    
     @IBOutlet weak var txtRepetirContrasenia: UITextField!
-    
     @IBOutlet weak var opAceptarTeryCon: UISwitch!
-    
     @IBOutlet weak var btnCrearCuenta: UIButton!
-    
     @IBOutlet weak var btnVolverIniciarSesion: UIButton!
-    
-    
-    
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        txtContrasenia.isSecureTextEntry = true
+        txtRepetirContrasenia.isSecureTextEntry = true
     }
 
-    
-    // MARK: - Acción Crear Cuenta
-        @IBAction func crearCuenta(_ sender: UIButton) {
-            
-            // Obtener valores (con nil-coalescing para evitar errores)
-            let nombre = txtNombreCompleto.text ?? ""
-            let fecha = txtFechaNacimiento.text ?? ""
-            let nick = txtNickUsuario.text ?? ""
-            let pass = txtContrasenia.text ?? ""
-            let repetirPass = txtRepetirContrasenia.text ?? ""
-            
-            // 1. Validar campos vacíos
-            if nombre.isEmpty || fecha.isEmpty || nick.isEmpty || pass.isEmpty || repetirPass.isEmpty {
-                mostrarAlerta(mensaje: "Por favor, completa todos los campos.")
-                return
-            }
-            
-            // 2. Validar contraseñas
-            if pass != repetirPass {
-                mostrarAlerta(mensaje: "Las contraseñas no coinciden.")
-                return
-            }
-            
-            // 3. Validar switch
-            if !opAceptarTeryCon.isOn {
-                mostrarAlerta(mensaje: "Debes aceptar los términos y condiciones.")
-                return
-            }
-            
-            // 4. Registro exitoso (simulado)
-            mostrarAlerta(mensaje: "Cuenta creada correctamente.") {
-                self.irAPantallaLogin()
-            }
+    @IBAction func crearCuenta(_ sender: UIButton) {
+        let nombre = txtNombreCompleto.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        let fecha = txtFechaNacimiento.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        let email = txtNickUsuario.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        let pass = txtContrasenia.text ?? ""
+        let repetirPass = txtRepetirContrasenia.text ?? ""
+
+        guard !nombre.isEmpty, !fecha.isEmpty, !email.isEmpty, !pass.isEmpty, !repetirPass.isEmpty else {
+            mostrarAlerta(mensaje: "Por favor, completa todos los campos.")
+            return
         }
-        
-        // MARK: - Acción Volver a Iniciar Sesión
-        @IBAction func volverIniciarSesion(_ sender: UIButton) {
-            irAPantallaLogin()
+        guard pass == repetirPass else {
+            mostrarAlerta(mensaje: "Las contraseñas no coinciden.")
+            return
         }
-        
-        // MARK: - Navegación
-        func irAPantallaLogin() {
-            dismiss(animated: true)
-            
-        }
-        
-        // MARK: - Alertas reutilizables
-        func mostrarAlerta(mensaje: String, completion: (() -> Void)? = nil) {
-            let alerta = UIAlertController(title: "Aviso", message: mensaje, preferredStyle: .alert)
-            
-            let accion = UIAlertAction(title: "OK", style: .default) { _ in
-                completion?()
-            }
-            
-            alerta.addAction(accion)
-            present(alerta, animated: true)
+        guard opAceptarTeryCon.isOn else {
+            mostrarAlerta(mensaje: "Debes aceptar los términos y condiciones.")
+            return
         }
 
-    
+        Auth.auth().createUser(withEmail: email, password: pass) { [weak self] result, error in
+            guard let self else { return }
+            if let error {
+                self.mostrarAlerta(mensaje: "Error: \(error.localizedDescription)")
+                return
+            }
+            guard let uid = result?.user.uid else { return }
 
+            let db = Firestore.firestore()
+            db.collection("usuarios").document(uid).setData([
+                "nombre": nombre,
+                "fechaNacimiento": fecha,
+                "email": email,
+                "uid": uid
+            ]) { error in
+                if let error {
+                    self.mostrarAlerta(mensaje: "Cuenta creada pero error al guardar datos: \(error.localizedDescription)")
+                    return
+                }
+                self.mostrarAlerta(mensaje: "Cuenta creada correctamente.") {
+                    self.irAPantallaLogin()
+                }
+            }
+        }
+    }
+
+    @IBAction func volverIniciarSesion(_ sender: UIButton) {
+        irAPantallaLogin()
+    }
+
+    func irAPantallaLogin() {
+        dismiss(animated: true)
+    }
+
+    func mostrarAlerta(mensaje: String, completion: (() -> Void)? = nil) {
+        let alerta = UIAlertController(title: "Aviso", message: mensaje, preferredStyle: .alert)
+        alerta.addAction(UIAlertAction(title: "OK", style: .default) { _ in completion?() })
+        present(alerta, animated: true)
+    }
 }

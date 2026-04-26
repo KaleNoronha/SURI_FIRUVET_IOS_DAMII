@@ -7,47 +7,50 @@
 
 import CoreData
 import UIKit
+import FirebaseFirestore
 
 class CoreDataManager {
     static let shared = CoreDataManager()
-    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    private let db = Firestore.firestore()
     
     // Insertar nueva cita
-    func insertarCita(mascota: String, fecha: Date, lugar: String, tipo: String, comentario: String) {
-        let cita = CitaEntity(context: context)
-        cita.mascota = mascota
-        cita.fechaHora = fecha
-        cita.lugar = lugar
-        cita.tipo = tipo
-        cita.comentario = comentario
-        
-        do {
-            try context.save()
-            print("Cita guardada correctamente")
-        } catch {
-            print("Error al guardar cita: \(error.localizedDescription)")
+    func insertarCita(uid: String, mascota: String, fecha: Date, lugar: String, tipo: String, comentario: String) {
+        let datos: [String: Any] = [
+            "mascota": mascota,
+            "fechaHora": Timestamp(date: fecha),
+            "lugar": lugar,
+            "tipo": tipo,
+            "comentario": comentario
+        ]
+        db.collection("usuarios").document(uid).collection("citas").addDocument(data: datos) { error in
+            if let error {
+                print("Error al guardar cita: \(error.localizedDescription)")
+            } else {
+                print("Cita guardada correctamente")
+            }
         }
     }
     
     // Obtener todas las citas
-    func obtenerCitas() -> [CitaEntity] {
-        let request: NSFetchRequest<CitaEntity> = CitaEntity.fetchRequest()
-        do {
-            return try context.fetch(request)
-        } catch {
-            print("Error al obtener citas: \(error.localizedDescription)")
-            return []
+    func obtenerCitas(uid: String, completion: @escaping ([QueryDocumentSnapshot]) -> Void) {
+        db.collection("usuarios").document(uid).collection("citas").getDocuments { snapshot, error in
+            if let error {
+                print("Error al obtener citas: \(error.localizedDescription)")
+                completion([])
+                return
+            }
+            completion(snapshot?.documents ?? [])
         }
     }
     
     // Eliminar una cita
-    func eliminarCita(_ cita: CitaEntity) {
-        context.delete(cita)
-        do {
-            try context.save()
-            print("Cita eliminada correctamente")
-        } catch {
-            print("Error al eliminar cita: \(error.localizedDescription)")
+    func eliminarCita(uid: String, citaId: String) {
+        db.collection("usuarios").document(uid).collection("citas").document(citaId).delete { error in
+            if let error {
+                print("Error al eliminar cita: \(error.localizedDescription)")
+            } else {
+                print("Cita eliminada correctamente")
+            }
         }
     }
 }
