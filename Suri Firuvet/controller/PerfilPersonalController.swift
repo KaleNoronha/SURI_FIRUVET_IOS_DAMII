@@ -10,7 +10,7 @@ class PerfilPersonalController: UIViewController {
     
     @IBOutlet weak var txtApellido: UITextField!
     @IBOutlet weak var txtNombreCompleto: UITextField!
-    @IBOutlet weak var txtFechaNacimiento: UITextField!
+    @IBOutlet weak var dpFechaNacimiento: UIDatePicker!
     @IBOutlet weak var txtCorreoElectronico: UITextField!
     @IBOutlet weak var txtTelefono: UITextField!
 
@@ -19,6 +19,9 @@ class PerfilPersonalController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        dpFechaNacimiento.datePickerMode = .date
+        dpFechaNacimiento.locale = Locale(identifier: "es_PE")
+        dpFechaNacimiento.maximumDate = Date()
         setupTapGestures()
         cargarDatosUsuario()
     }
@@ -29,10 +32,16 @@ class PerfilPersonalController: UIViewController {
             guard let self, let data = snapshot?.data(), error == nil else { return }
             DispatchQueue.main.async {
                 self.txtNombreCompleto.text  = data["nombre"] as? String ?? ""
-                self.txtFechaNacimiento.text = data["fechaNacimiento"] as? String ?? ""
                 self.txtCorreoElectronico.text = data["email"] as? String ?? ""
                 self.txtTelefono.text = data["telefono"] as? String ?? ""
                 self.txtApellido.text = data["apellido"] as? String ?? ""
+                if let fechaStr = data["fechaNacimiento"] as? String {
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "dd/MM/yyyy"
+                    if let fecha = formatter.date(from: fechaStr) {
+                        self.dpFechaNacimiento.date = fecha
+                    }
+                }
             }
         }
     }
@@ -41,7 +50,9 @@ class PerfilPersonalController: UIViewController {
         guard let uid = Auth.auth().currentUser?.uid else { return }
 
         let nombre = txtNombreCompleto.text?.trimmingCharacters(in: .whitespaces) ?? ""
-        let fecha = txtFechaNacimiento.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yyyy"
+        let fecha = formatter.string(from: dpFechaNacimiento.date)
         let telefono = txtTelefono.text?.trimmingCharacters(in: .whitespaces) ?? ""
         let apellido = txtApellido.text?.trimmingCharacters(in: .whitespaces) ?? ""
 

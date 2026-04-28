@@ -80,9 +80,8 @@ class ViewController: UIViewController {
                 let fecha = snapshot?.data()?["fechaNacimiento"] as? String
                 print("[LOGIN] Datos Firestore - nombre: \(nombre), fecha: \(String(describing: fecha))")
 
-                let partes = nombre.components(separatedBy: " ")
-                let nombCli = partes.first ?? ""
-                let apeCli = partes.dropFirst().joined(separator: " ")
+                let nombCli = snapshot?.data()?["nombre"] as? String ?? ""
+                let apeCli = (snapshot?.data()?["apellido"] as? String ?? "").isEmpty ? "-" : (snapshot?.data()?["apellido"] as? String ?? "-")
 
                 // Buscar si existe en la API
                 print("[LOGIN] Buscando cliente por uid en API...")

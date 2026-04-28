@@ -5,7 +5,8 @@ import FirebaseFirestore
 class RegistrarCuentaController: UIViewController {
 
     @IBOutlet weak var txtNombreCompleto: UITextField!
-    @IBOutlet weak var txtFechaNacimiento: UITextField!
+    @IBOutlet weak var txtApellido: UITextField!
+    @IBOutlet weak var dpFechaNacimiento: UIDatePicker!
     @IBOutlet weak var txtCorreoUsuario: UITextField!
     @IBOutlet weak var txtContrasenia: UITextField!
     @IBOutlet weak var txtRepetirContrasenia: UITextField!
@@ -14,44 +15,18 @@ class RegistrarCuentaController: UIViewController {
     @IBOutlet weak var btnVolverIniciarSesion: UIButton!
 
     private let spinner = UIActivityIndicatorView(style: .large)
-    private let datePicker = UIDatePicker()
 
     override func viewDidLoad() {
         super.viewDidLoad()
         txtContrasenia.isSecureTextEntry = true
         txtRepetirContrasenia.isSecureTextEntry = true
         configurarSpinner()
-        configurarDatePicker()
+        dpFechaNacimiento.datePickerMode = .date
+        dpFechaNacimiento.locale = Locale(identifier: "es_PE")
+        dpFechaNacimiento.maximumDate = Date()
     }
 
-    private func configurarDatePicker() {
-        datePicker.datePickerMode = .date
-        datePicker.preferredDatePickerStyle = .wheels
-        datePicker.locale = Locale(identifier: "es_PE")
-        datePicker.maximumDate = Date()
-        datePicker.addTarget(self, action: #selector(fechaCambiada), for: .valueChanged)
-        txtFechaNacimiento.inputView = datePicker
-
-        let toolbar = UIToolbar()
-        toolbar.sizeToFit()
-        let btnDone = UIBarButtonItem(title: "Listo", style: .done, target: self, action: #selector(cerrarDatePicker))
-        toolbar.setItems([UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil), btnDone], animated: false)
-        txtFechaNacimiento.inputAccessoryView = toolbar
-        txtFechaNacimiento.tintColor = .clear
-    }
-
-    @objc private func fechaCambiada() {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd/MM/yyyy"
-        txtFechaNacimiento.text = formatter.string(from: datePicker.date)
-    }
-
-    @objc private func cerrarDatePicker() {
-        fechaCambiada()
-        txtFechaNacimiento.resignFirstResponder()
-    }
-
-    private func configurarSpinner() {
+private func configurarSpinner() {
         spinner.color = .white
         spinner.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(spinner)
@@ -77,12 +52,15 @@ class RegistrarCuentaController: UIViewController {
 
     @IBAction func crearCuenta(_ sender: UIButton) {
         let nombre = txtNombreCompleto.text?.trimmingCharacters(in: .whitespaces) ?? ""
-        let fecha = txtFechaNacimiento.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        let apellido = txtApellido.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yyyy"
+        let fecha = formatter.string(from: dpFechaNacimiento.date)
         let email = txtCorreoUsuario.text?.trimmingCharacters(in: .whitespaces) ?? ""
         let pass = txtContrasenia.text ?? ""
         let repetirPass = txtRepetirContrasenia.text ?? ""
 
-        guard !nombre.isEmpty, !fecha.isEmpty, !email.isEmpty, !pass.isEmpty, !repetirPass.isEmpty else {
+        guard !nombre.isEmpty, !apellido.isEmpty, !fecha.isEmpty, !email.isEmpty, !pass.isEmpty, !repetirPass.isEmpty else {
             mostrarAlerta(mensaje: "Por favor, completa todos los campos.")
             return
         }
@@ -112,6 +90,7 @@ class RegistrarCuentaController: UIViewController {
             let db = Firestore.firestore()
             db.collection("usuarios").document(uid).setData([
                 "nombre": nombre,
+                "apellido": apellido,
                 "fechaNacimiento": fecha,
                 "email": email,
                 "uid": uid
@@ -122,10 +101,7 @@ class RegistrarCuentaController: UIViewController {
                     return
                 }
 
-                let partes = nombre.components(separatedBy: " ")
-                let nombCli = partes.first ?? nombre
-                let apeCli = partes.dropFirst().joined(separator: " ")
-                let req = ClienteRequest(nombCli: nombCli, apeCli: apeCli, fecNac: fecha, uid: uid)
+                let req = ClienteRequest(nombCli: nombre, apeCli: apellido.isEmpty ? "-" : apellido, fecNac: fecha, uid: uid)
 
                 ClienteService.shared.crearCliente(req) { _ in
                     DispatchQueue.main.async {

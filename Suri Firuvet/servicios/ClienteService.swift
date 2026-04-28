@@ -36,6 +36,7 @@ class ClienteService {
             return
         }
         print("[API] crearCliente uid=\(cliente.uid) nombre=\(cliente.nombCli)")
+        print("[API] crearCliente body=\(String(data: body, encoding: .utf8) ?? "-")")
         request(url: baseURL, method: "POST", body: body) { data, error in
             if let error = error { 
                 print("[API] crearCliente error: \(error.localizedDescription)")
