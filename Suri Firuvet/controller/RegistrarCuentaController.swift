@@ -1,10 +1,3 @@
-//
-//  RegistrarCuentaController.swift
-//  Suri Firuvet
-//
-//  Created by XCODE on 18/04/26.
-//
-
 import UIKit
 import FirebaseAuth
 import FirebaseFirestore
@@ -20,10 +13,37 @@ class RegistrarCuentaController: UIViewController {
     @IBOutlet weak var btnCrearCuenta: UIButton!
     @IBOutlet weak var btnVolverIniciarSesion: UIButton!
 
+    private let spinner = UIActivityIndicatorView(style: .large)
+
     override func viewDidLoad() {
         super.viewDidLoad()
         txtContrasenia.isSecureTextEntry = true
         txtRepetirContrasenia.isSecureTextEntry = true
+        configurarSpinner()
+    }
+
+    private func configurarSpinner() {
+        spinner.color = .white
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(spinner)
+        NSLayoutConstraint.activate([
+            spinner.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            spinner.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
+    }
+
+    private func mostrarCarga(_ mostrar: Bool) {
+        DispatchQueue.main.async {
+            if mostrar {
+                self.spinner.startAnimating()
+                self.btnCrearCuenta.isEnabled = false
+                self.view.alpha = 0.8
+            } else {
+                self.spinner.stopAnimating()
+                self.btnCrearCuenta.isEnabled = true
+                self.view.alpha = 1.0
+            }
+        }
     }
 
     @IBAction func crearCuenta(_ sender: UIButton) {
@@ -46,13 +66,19 @@ class RegistrarCuentaController: UIViewController {
             return
         }
 
+        mostrarCarga(true)
+
         Auth.auth().createUser(withEmail: email, password: pass) { [weak self] result, error in
             guard let self else { return }
             if let error {
+                self.mostrarCarga(false)
                 self.mostrarAlerta(mensaje: "Error: \(error.localizedDescription)")
                 return
             }
-            guard let uid = result?.user.uid else { return }
+            guard let uid = result?.user.uid else {
+                self.mostrarCarga(false)
+                return
+            }
 
             let db = Firestore.firestore()
             db.collection("usuarios").document(uid).setData([
@@ -62,18 +88,23 @@ class RegistrarCuentaController: UIViewController {
                 "uid": uid
             ]) { error in
                 if let error {
+                    self.mostrarCarga(false)
                     self.mostrarAlerta(mensaje: "Cuenta creada pero error al guardar datos: \(error.localizedDescription)")
                     return
                 }
-                // Crear cliente en PostgreSQL
+
                 let partes = nombre.components(separatedBy: " ")
                 let nombCli = partes.first ?? nombre
                 let apeCli = partes.dropFirst().joined(separator: " ")
                 let req = ClienteRequest(nombCli: nombCli, apeCli: apeCli, fecNac: fecha, uid: uid)
-                ClienteService.shared.crearCliente(req) { _ in }
 
-                self.mostrarAlerta(mensaje: "Cuenta creada correctamente.") {
-                    self.irAPantallaLogin()
+                ClienteService.shared.crearCliente(req) { _ in
+                    DispatchQueue.main.async {
+                        self.mostrarCarga(false)
+                        self.mostrarAlerta(mensaje: "Cuenta creada correctamente.") {
+                            self.irAPantallaLogin()
+                        }
+                    }
                 }
             }
         }

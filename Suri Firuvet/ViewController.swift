@@ -7,9 +7,36 @@ class ViewController: UIViewController {
     @IBOutlet weak var btnIngresarSistema: UIButton!
     @IBOutlet weak var btnRegistrarNuevaCuenta: UIButton!
 
+    private let spinner = UIActivityIndicatorView(style: .large)
+
     override func viewDidLoad() {
         super.viewDidLoad()
         txtContrasenia.isSecureTextEntry = true
+        configurarSpinner()
+    }
+
+    private func configurarSpinner() {
+        spinner.color = .white
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(spinner)
+        NSLayoutConstraint.activate([
+            spinner.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            spinner.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
+    }
+
+    private func mostrarCarga(_ mostrar: Bool) {
+        DispatchQueue.main.async {
+            if mostrar {
+                self.spinner.startAnimating()
+                self.btnIngresarSistema.isEnabled = false
+                self.view.alpha = 0.8
+            } else {
+                self.spinner.stopAnimating()
+                self.btnIngresarSistema.isEnabled = true
+                self.view.alpha = 1.0
+            }
+        }
     }
 
     @IBAction func ingresarSistema(_ sender: UIButton) {
@@ -21,27 +48,33 @@ class ViewController: UIViewController {
             return
         }
 
+        mostrarCarga(true)
+
         Auth.auth().signIn(withEmail: email, password: pass) { [weak self] result, error in
             guard let self else { return }
             if let error {
+                self.mostrarCarga(false)
                 self.mostrarAlerta(mensaje: "Error: \(error.localizedDescription)")
                 return
             }
-            guard let user = result?.user else { return }
+            guard let user = result?.user else {
+                self.mostrarCarga(false)
+                return
+            }
 
             let nombre = user.displayName ?? email.components(separatedBy: "@").first ?? "Usuario"
 
             ClienteService.shared.sincronizarCliente(uid: user.uid, nombre: nombre, apellido: "") { syncResult in
                 DispatchQueue.main.async {
+                    self.mostrarCarga(false)
+                    UserDefaults.standard.set(user.uid, forKey: "uid")
                     switch syncResult {
                     case .success(let idCliente):
                         UserDefaults.standard.set(idCliente, forKey: "idCliente")
-                        UserDefaults.standard.set(user.uid, forKey: "uid")
-                        self.irASiguientePantalla()
                     case .failure:
-                        // Si falla la sincronización igual deja pasar
-                        self.irASiguientePantalla()
+                        break
                     }
+                    self.irASiguientePantalla()
                 }
             }
         }
