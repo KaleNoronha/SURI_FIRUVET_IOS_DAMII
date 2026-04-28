@@ -8,12 +8,22 @@ class ClienteService {
     // MARK: - Buscar cliente por uid de Firebase
     func buscarPorUid(_ uid: String, completion: @escaping (Result<ClienteDTO?, Error>) -> Void) {
         request(url: "\(baseURL)/uid/\(uid)", method: "GET") { data, error in
-            if let error = error { completion(.failure(error)); return }
-            guard let data = data else { completion(.success(nil)); return }
+            if let error = error { 
+                print("[API] buscarPorUid error: \(error.localizedDescription)")
+                completion(.failure(error))
+                return 
+            }
+            guard let data = data else { 
+                print("[API] buscarPorUid: cliente no encontrado (404)")
+                completion(.success(nil))
+                return 
+            }
             do {
                 let cliente = try JSONDecoder().decode(ClienteDTO.self, from: data)
+                print("[API] buscarPorUid: cliente encontrado id=\(String(describing: cliente.id))")
                 completion(.success(cliente))
             } catch {
+                print("[API] buscarPorUid decode error: \(error)")
                 completion(.success(nil))
             }
         }
@@ -25,16 +35,23 @@ class ClienteService {
             completion(.failure(NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Error al codificar datos"])))
             return
         }
+        print("[API] crearCliente uid=\(cliente.uid) nombre=\(cliente.nombCli)")
         request(url: baseURL, method: "POST", body: body) { data, error in
-            if let error = error { completion(.failure(error)); return }
+            if let error = error { 
+                print("[API] crearCliente error: \(error.localizedDescription)")
+                completion(.failure(error))
+                return 
+            }
             guard let data = data else {
                 completion(.failure(NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Sin datos"])))
                 return
             }
             do {
                 let clienteCreado = try JSONDecoder().decode(ClienteDTO.self, from: data)
+                print("[API] crearCliente exitoso id=\(String(describing: clienteCreado.id))")
                 completion(.success(clienteCreado))
             } catch {
+                print("[API] crearCliente decode error: \(error)")
                 completion(.failure(error))
             }
         }
@@ -76,8 +93,10 @@ class ClienteService {
         req.httpBody = body
 
         URLSession.shared.dataTask(with: req) { data, response, error in
-            // Si el servidor retorna 404, no es un error sino "no existe"
-            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 404 {
+            if let http = response as? HTTPURLResponse {
+                print("[API] \(method) \(url) → HTTP \(http.statusCode)")
+            }
+            if let http = response as? HTTPURLResponse, http.statusCode == 404 {
                 completion(nil, nil)
                 return
             }
