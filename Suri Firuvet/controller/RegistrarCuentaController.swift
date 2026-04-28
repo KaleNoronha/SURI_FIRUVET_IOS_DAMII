@@ -1,29 +1,126 @@
-//
-//  RegistrarCuentaController.swift
-//  Suri Firuvet
-//
-//  Created by XCODE on 18/04/26.
-//
-
 import UIKit
+import FirebaseAuth
+import FirebaseFirestore
 
 class RegistrarCuentaController: UIViewController {
 
+    @IBOutlet weak var txtNombreCompleto: UITextField!
+    @IBOutlet weak var txtFechaNacimiento: UITextField!
+    @IBOutlet weak var txtCorreoUsuario: UITextField!
+    @IBOutlet weak var txtContrasenia: UITextField!
+    @IBOutlet weak var txtRepetirContrasenia: UITextField!
+    @IBOutlet weak var opAceptarTeryCon: UISwitch!
+    @IBOutlet weak var btnCrearCuenta: UIButton!
+    @IBOutlet weak var btnVolverIniciarSesion: UIButton!
+
+    private let spinner = UIActivityIndicatorView(style: .large)
+
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        // Do any additional setup after loading the view.
+        txtContrasenia.isSecureTextEntry = true
+        txtRepetirContrasenia.isSecureTextEntry = true
+        configurarSpinner()
     }
-    
 
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destination.
-        // Pass the selected object to the new view controller.
+    private func configurarSpinner() {
+        spinner.color = .white
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(spinner)
+        NSLayoutConstraint.activate([
+            spinner.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            spinner.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
     }
-    */
 
+    private func mostrarCarga(_ mostrar: Bool) {
+        DispatchQueue.main.async {
+            if mostrar {
+                self.spinner.startAnimating()
+                self.btnCrearCuenta.isEnabled = false
+                self.view.alpha = 0.8
+            } else {
+                self.spinner.stopAnimating()
+                self.btnCrearCuenta.isEnabled = true
+                self.view.alpha = 1.0
+            }
+        }
+    }
+
+    @IBAction func crearCuenta(_ sender: UIButton) {
+        let nombre = txtNombreCompleto.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        let fecha = txtFechaNacimiento.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        let email = txtCorreoUsuario.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        let pass = txtContrasenia.text ?? ""
+        let repetirPass = txtRepetirContrasenia.text ?? ""
+
+        guard !nombre.isEmpty, !fecha.isEmpty, !email.isEmpty, !pass.isEmpty, !repetirPass.isEmpty else {
+            mostrarAlerta(mensaje: "Por favor, completa todos los campos.")
+            return
+        }
+        guard pass == repetirPass else {
+            mostrarAlerta(mensaje: "Las contraseñas no coinciden.")
+            return
+        }
+        guard opAceptarTeryCon.isOn else {
+            mostrarAlerta(mensaje: "Debes aceptar los términos y condiciones.")
+            return
+        }
+
+        mostrarCarga(true)
+
+        Auth.auth().createUser(withEmail: email, password: pass) { [weak self] result, error in
+            guard let self else { return }
+            if let error {
+                self.mostrarCarga(false)
+                self.mostrarAlerta(mensaje: "Error: \(error.localizedDescription)")
+                return
+            }
+            guard let uid = result?.user.uid else {
+                self.mostrarCarga(false)
+                return
+            }
+
+            let db = Firestore.firestore()
+            db.collection("usuarios").document(uid).setData([
+                "nombre": nombre,
+                "fechaNacimiento": fecha,
+                "email": email,
+                "uid": uid
+            ]) { error in
+                if let error {
+                    self.mostrarCarga(false)
+                    self.mostrarAlerta(mensaje: "Cuenta creada pero error al guardar datos: \(error.localizedDescription)")
+                    return
+                }
+
+                let partes = nombre.components(separatedBy: " ")
+                let nombCli = partes.first ?? nombre
+                let apeCli = partes.dropFirst().joined(separator: " ")
+                let req = ClienteRequest(nombCli: nombCli, apeCli: apeCli, fecNac: fecha, uid: uid)
+
+                ClienteService.shared.crearCliente(req) { _ in
+                    DispatchQueue.main.async {
+                        self.mostrarCarga(false)
+                        self.mostrarAlerta(mensaje: "Cuenta creada correctamente.") {
+                            self.irAPantallaLogin()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @IBAction func volverIniciarSesion(_ sender: UIButton) {
+        irAPantallaLogin()
+    }
+
+    func irAPantallaLogin() {
+        dismiss(animated: true)
+    }
+
+    func mostrarAlerta(mensaje: String, completion: (() -> Void)? = nil) {
+        let alerta = UIAlertController(title: "Aviso", message: mensaje, preferredStyle: .alert)
+        alerta.addAction(UIAlertAction(title: "OK", style: .default) { _ in completion?() })
+        present(alerta, animated: true)
+    }
 }
