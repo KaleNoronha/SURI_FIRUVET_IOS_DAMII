@@ -7,4 +7,12 @@
         <attribute name="tipo" optional="YES" attributeType="String"/>
         <attribute name="comentario" optional="YES" attributeType="String"/>
     </entity>
+    <entity name="MascotaEntity" representedClassName="MascotaEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="idRemoto" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="nombre" optional="YES" attributeType="String"/>
+        <attribute name="tipo" optional="YES" attributeType="String"/>
+        <attribute name="apodos" optional="YES" attributeType="String"/>
+        <attribute name="alergias" optional="YES" attributeType="String"/>
+        <attribute name="uid" optional="YES" attributeType="String"/>
+    </entity>
 </model>

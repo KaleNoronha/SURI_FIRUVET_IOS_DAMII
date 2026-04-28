@@ -124,11 +124,21 @@ class IngresarMascotaController: UIViewController, UIPickerViewDelegate, UIPicke
 
         mostrarCarga(true)
 
-        MascotaService.shared.crearMascota(MascotaRequest(uid: uid, nombMas: nombre, idTipoMascota: idTipo)) { [weak self] result in
+        let apodos = txtApodosMascota.text?.trimmingCharacters(in: .whitespaces)
+        let alergias = txtAlergias.text?.trimmingCharacters(in: .whitespaces)
+
+        MascotaService.shared.crearMascota(MascotaRequest(
+            uid: uid,
+            nombMas: nombre,
+            idTipoMascota: idTipo,
+            apodos: apodos?.isEmpty == true ? nil : apodos,
+            alergias: alergias?.isEmpty == true ? nil : alergias
+        )) { [weak self] result in
             DispatchQueue.main.async {
                 self?.mostrarCarga(false)
                 switch result {
-                case .success:
+                case .success(let nueva):
+                    CoreDataManager.shared.guardarMascotas([nueva], uid: uid)
                     self?.mostrarAlerta(mensaje: "Mascota registrada correctamente.") {
                         self?.limpiarCampos()
                     }

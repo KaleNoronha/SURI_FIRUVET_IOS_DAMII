@@ -1,5 +1,6 @@
 import UIKit
 import FirebaseAuth
+import FirebaseFirestore
 
 class ViewController: UIViewController {
     @IBOutlet weak var txtCorreoUsuario: UITextField!
@@ -62,19 +63,66 @@ class ViewController: UIViewController {
                 return
             }
 
-            let nombre = user.displayName ?? email.components(separatedBy: "@").first ?? "Usuario"
+            // Guardar uid inmediatamente
+            UserDefaults.standard.set(user.uid, forKey: "uid")
+            print("[LOGIN] UID obtenido: \(user.uid)")
 
-            ClienteService.shared.sincronizarCliente(uid: user.uid, nombre: nombre, apellido: "") { syncResult in
-                DispatchQueue.main.async {
-                    self.mostrarCarga(false)
-                    UserDefaults.standard.set(user.uid, forKey: "uid")
-                    switch syncResult {
-                    case .success(let idCliente):
-                        UserDefaults.standard.set(idCliente, forKey: "idCliente")
-                    case .failure:
-                        break
+            // Obtener datos desde Firestore
+            let db = Firestore.firestore()
+            db.collection("usuarios").document(user.uid).getDocument { [weak self] snapshot, error in
+                guard let self else { return }
+
+                if let error = error {
+                    print("[LOGIN] Error al obtener Firestore: \(error.localizedDescription)")
+                }
+
+                let nombre = snapshot?.data()?["nombre"] as? String ?? ""
+                let fecha = snapshot?.data()?["fechaNacimiento"] as? String
+                print("[LOGIN] Datos Firestore - nombre: \(nombre), fecha: \(String(describing: fecha))")
+
+                let nombCli = snapshot?.data()?["nombre"] as? String ?? ""
+                let apeCli = (snapshot?.data()?["apellido"] as? String ?? "").isEmpty ? "-" : (snapshot?.data()?["apellido"] as? String ?? "-")
+
+                // Buscar si existe en la API
+                print("[LOGIN] Buscando cliente por uid en API...")
+                ClienteService.shared.buscarPorUid(user.uid) { result in
+                    switch result {
+                    case .success(let cliente):
+                        if let cliente = cliente, let id = cliente.id {
+                            print("[LOGIN] Cliente encontrado en API - idCliente: \(id)")
+                            DispatchQueue.main.async {
+                                UserDefaults.standard.set(id, forKey: "idCliente")
+                                self.mostrarCarga(false)
+                                self.irASiguientePantalla()
+                            }
+                        } else {
+                            print("[LOGIN] Cliente NO existe en API, creando...")
+                            let req = ClienteRequest(nombCli: nombCli, apeCli: apeCli, fecNac: fecha, uid: user.uid)
+                            ClienteService.shared.crearCliente(req) { createResult in
+                                switch createResult {
+                                case .success(let nuevo):
+                                    print("[LOGIN] Cliente creado en API - idCliente: \(String(describing: nuevo.id))")
+                                    DispatchQueue.main.async {
+                                        UserDefaults.standard.set(nuevo.id ?? 0, forKey: "idCliente")
+                                        self.mostrarCarga(false)
+                                        self.irASiguientePantalla()
+                                    }
+                                case .failure(let error):
+                                    print("[LOGIN] Error al crear cliente: \(error.localizedDescription)")
+                                    DispatchQueue.main.async {
+                                        self.mostrarCarga(false)
+                                        self.irASiguientePantalla()
+                                    }
+                                }
+                            }
+                        }
+                    case .failure(let error):
+                        print("[LOGIN] Error al buscar cliente: \(error.localizedDescription)")
+                        DispatchQueue.main.async {
+                            self.mostrarCarga(false)
+                            self.irASiguientePantalla()
+                        }
                     }
-                    self.irASiguientePantalla()
                 }
             }
         }

@@ -5,7 +5,8 @@ import FirebaseFirestore
 class RegistrarCuentaController: UIViewController {
 
     @IBOutlet weak var txtNombreCompleto: UITextField!
-    @IBOutlet weak var txtFechaNacimiento: UITextField!
+    @IBOutlet weak var txtApellido: UITextField!
+    @IBOutlet weak var dpFechaNacimiento: UIDatePicker!
     @IBOutlet weak var txtCorreoUsuario: UITextField!
     @IBOutlet weak var txtContrasenia: UITextField!
     @IBOutlet weak var txtRepetirContrasenia: UITextField!
@@ -20,9 +21,12 @@ class RegistrarCuentaController: UIViewController {
         txtContrasenia.isSecureTextEntry = true
         txtRepetirContrasenia.isSecureTextEntry = true
         configurarSpinner()
+        dpFechaNacimiento.datePickerMode = .date
+        dpFechaNacimiento.locale = Locale(identifier: "es_PE")
+        dpFechaNacimiento.maximumDate = Date()
     }
 
-    private func configurarSpinner() {
+private func configurarSpinner() {
         spinner.color = .white
         spinner.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(spinner)
@@ -48,12 +52,15 @@ class RegistrarCuentaController: UIViewController {
 
     @IBAction func crearCuenta(_ sender: UIButton) {
         let nombre = txtNombreCompleto.text?.trimmingCharacters(in: .whitespaces) ?? ""
-        let fecha = txtFechaNacimiento.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        let apellido = txtApellido.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yyyy"
+        let fecha = formatter.string(from: dpFechaNacimiento.date)
         let email = txtCorreoUsuario.text?.trimmingCharacters(in: .whitespaces) ?? ""
         let pass = txtContrasenia.text ?? ""
         let repetirPass = txtRepetirContrasenia.text ?? ""
 
-        guard !nombre.isEmpty, !fecha.isEmpty, !email.isEmpty, !pass.isEmpty, !repetirPass.isEmpty else {
+        guard !nombre.isEmpty, !apellido.isEmpty, !fecha.isEmpty, !email.isEmpty, !pass.isEmpty, !repetirPass.isEmpty else {
             mostrarAlerta(mensaje: "Por favor, completa todos los campos.")
             return
         }
@@ -83,6 +90,7 @@ class RegistrarCuentaController: UIViewController {
             let db = Firestore.firestore()
             db.collection("usuarios").document(uid).setData([
                 "nombre": nombre,
+                "apellido": apellido,
                 "fechaNacimiento": fecha,
                 "email": email,
                 "uid": uid
@@ -93,10 +101,7 @@ class RegistrarCuentaController: UIViewController {
                     return
                 }
 
-                let partes = nombre.components(separatedBy: " ")
-                let nombCli = partes.first ?? nombre
-                let apeCli = partes.dropFirst().joined(separator: " ")
-                let req = ClienteRequest(nombCli: nombCli, apeCli: apeCli, fecNac: fecha, uid: uid)
+                let req = ClienteRequest(nombCli: nombre, apeCli: apellido.isEmpty ? "-" : apellido, fecNac: fecha, uid: uid)
 
                 ClienteService.shared.crearCliente(req) { _ in
                     DispatchQueue.main.async {

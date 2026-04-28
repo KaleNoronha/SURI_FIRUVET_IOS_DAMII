@@ -1,6 +1,6 @@
 # Suri Firuvet 🐾
 
-Aplicación móvil iOS desarrollada en Swift para la gestión de servicios veterinarios. Permite a los dueños de mascotas registrarse, administrar el perfil de sus mascotas, agendar citas veterinarias, consultar lugares disponibles y acceder a beneficios exclusivos, todo desde su iPhone.
+Aplicación móvil iOS desarrollada en Swift para la gestión de servicios veterinarios. Permite a los dueños de mascotas registrarse, administrar el perfil de sus mascotas, agendar citas veterinarias y consultar clínicas disponibles.
 
 ---
 
@@ -11,65 +11,134 @@ Aplicación móvil iOS desarrollada en Swift para la gestión de servicios veter
 - **Arquitectura:** MVC (Model - View - Controller)
 - **Interfaz:** Storyboard (`Main.storyboard` + `LaunchScreen.storyboard`)
 - **Plataforma:** iOS
-- **IDE:** Xcode
-- **Gestión de dependencias:** Ninguna (sin CocoaPods ni SPM)
+- **IDE:** Xcode 14+
+- **Autenticación:** Firebase Auth
+- **Base de datos en la nube:** Firebase Firestore
+- **Persistencia local:** Core Data (`SuriFiruvet.xcdatamodeld`)
+- **API REST:** `https://suri-firuvet-ios-damii-api.onrender.com/api`
+- **Sesión:** `UserDefaults` (almacena `uid` del usuario autenticado)
 
 ---
 
 ## Arquitectura del proyecto
 
-El proyecto sigue el patrón **MVC** y está organizado en las siguientes carpetas:
-
 ```
-Suri Firuvet/
-├── controller/       # ViewControllers de cada pantalla
-├── modelo/           # Modelos de datos (entidades de la app)
-├── estructuras/      # Estructuras Swift de soporte
-├── protocolos/       # Protocolos e interfaces Swift
-├── celdas/           # Celdas personalizadas para TableViews/CollectionViews
-├── Assets.xcassets/  # Imágenes, íconos, banners y colores
-└── Base.lproj/       # Storyboards (Main y LaunchScreen)
+SURI_FIRUVET_IOS_DAMII/
+├── docs/                     # Documentación técnica por módulo
+├── Suri Firuvet/
+│   ├── controller/           # ViewControllers de cada pantalla
+│   ├── modelo/               # DTOs y structs de request/response
+│   ├── servicios/            # Clientes HTTP (URLSession) por entidad
+│   ├── CoreData/             # CoreDataManager + modelo .xcdatamodeld
+│   ├── Cells/                # Celdas personalizadas para TableViews
+│   ├── Assets.xcassets/      # Imágenes, íconos, banners y colores
+│   └── Base.lproj/           # Main.storyboard + LaunchScreen.storyboard
+└── README.md
 ```
 
 ---
 
-## Pantallas y funcionalidades
+## Pantallas y fuente de datos
 
-| Controller | Descripción |
+| Controller | Descripción | Firebase Auth | Firestore | API REST | Core Data |
+|---|---|:---:|:---:|:---:|:---:|
+| `ViewController` | Inicio de sesión | ✅ | | ✅ | |
+| `RegistrarCuentaController` | Registro de usuario | ✅ | ✅ | ✅ | |
+| `MenuPrincipalController` | Dashboard de navegación | | | | |
+| `PerfilPersonalController` | Ver y editar perfil del usuario | ✅ | ✅ | | |
+| `IngresarMascotaController` | Registrar nueva mascota | | | ✅ | ✅ |
+| `ListaMascotasController` | Lista de mascotas del usuario | | | | ✅ |
+| `PerfilMascotaController` | Detalle y edición de mascota | | | | ✅ |
+| `CrearCitaController` | Agendar nueva cita veterinaria | | | ✅ | |
+| `ListaCitasController` | Lista de citas del usuario | | | ✅ | |
+| `DetallesCitaController` | Detalle, modificar y eliminar cita | | | ✅ | |
+
+---
+
+## Flujo de navegación
+
+```
+ViewController (Login)
+  ├── Firebase Auth → signIn
+  ├── API → sincronizarCliente(uid)
+  └── UserDefaults.set(uid)
+          ↓
+  MenuPrincipalController
+    ├──→ IngresarMascotaController
+    │       ├── GET /api/tipos-mascota
+    │       ├── POST /api/mascotas
+    │       └── CoreData.guardarMascotas()
+    │
+    ├──→ ListaMascotasController
+    │       ├── CoreData.obtenerMascotasLocales(uid)
+    │       └──→ PerfilMascotaController
+    │               ├── CoreData.actualizarMascotaLocal()
+    │               └── CoreData.eliminarMascotaLocal()
+    │
+    ├──→ CrearCitaController
+    │       ├── GET /api/mascotas?uid
+    │       ├── GET /api/clinicas
+    │       ├── GET /api/tipos-cita
+    │       └── POST /api/citas
+    │
+    ├──→ ListaCitasController
+    │       ├── GET /api/citas?uid
+    │       └──→ DetallesCitaController
+    │               ├── PUT  /api/citas/{id}
+    │               └── DELETE /api/citas/{id}
+    │
+    └──→ PerfilPersonalController
+            ├── Firestore: usuarios/{uid}.getDocument()
+            └── Firestore: usuarios/{uid}.updateData()
+```
+
+---
+
+## Firestore — Estructura de datos
+
+```
+usuarios/{uid}
+  ├── nombre, apellido, fechaNacimiento, email, uid, telefono
+  └── citas/{citaId}
+        ├── mascota, fechaHora, lugar, tipo, comentario
+```
+
+> `CoreDataManager` gestiona la subcolección `citas` en Firestore además de la entidad `MascotaEntity` en Core Data local.
+
+---
+
+## Core Data — Entidades
+
+| Entidad | Atributos |
 |---|---|
-| `RegistrarCuentaController` | Registro de nuevos usuarios en la plataforma |
-| `MenuPrincipalController` | Menú principal con acceso a todas las funciones |
-| `PerfilPersonalController` | Visualización y edición del perfil del usuario |
-| `IngresarMascotaController` | Registro de una nueva mascota |
-| `ListaMascotasController` | Lista de todas las mascotas registradas del usuario |
-| `PerfilMascotaController` | Detalle y edición del perfil de una mascota específica |
-| `CrearCitaController` | Formulario para agendar una nueva cita veterinaria |
-| `ListaCitasController` | Lista de citas pendientes y pasadas |
-| `DetallesCitaController` | Detalle completo de una cita específica |
-| `ListaLugaresController` | Listado de clínicas o lugares veterinarios disponibles |
-| `BeneficiosController` | Sección de beneficios y promociones para usuarios |
-| `ConfiguracionController` | Ajustes y configuración de la cuenta |
-| `TerminosCondicionesController` | Términos y condiciones de uso de la aplicación |
+| `CitaEntity` | `mascota`, `fechaHora`, `lugar`, `tipo`, `comentario` |
+| `MascotaEntity` | `idRemoto`, `nombre`, `tipo`, `apodos`, `alergias`, `uid` |
 
 ---
 
-## Assets incluidos
+## API REST — Endpoints
 
-La app cuenta con un sistema visual completo:
-
-- **Banners** por pantalla: inicio de sesión, menú principal, crear cita, citas pendientes, perfil de mascota, perfil personal, beneficios, configuración
-- **Botones personalizados:** crear cita, ingresar mascota, lista de citas, lista de lugares, beneficios, agregar
-- **Íconos de opciones:** usuario, mascota, configuración, volver, eliminar
-- **Fondo decorativo** con huellas (identidad visual de la marca)
-- **Logo Firuvet** y **App Icon** configurados
+| Método | Endpoint | Usado en |
+|---|---|---|
+| POST | `/api/clientes` | Registro y login |
+| GET | `/api/clientes/uid/{uid}` | Login |
+| GET | `/api/tipos-mascota` | Ingresar mascota |
+| POST | `/api/mascotas` | Ingresar mascota |
+| GET | `/api/clinicas` | Crear cita |
+| GET | `/api/tipos-cita` | Crear cita |
+| POST | `/api/citas` | Crear cita |
+| GET | `/api/citas?uid={uid}` | Lista de citas |
+| PUT | `/api/citas/{id}` | Detalles de cita |
+| DELETE | `/api/citas/{id}?uid={uid}` | Detalles de cita |
 
 ---
 
 ## Requisitos para compilar
 
-- macOS con Xcode instalado (se recomienda Xcode 14 o superior)
+- macOS con Xcode 14 o superior
+- Firebase configurado (`GoogleService-Info.plist` incluido)
 - iOS Deployment Target definido en el proyecto
-- No requiere instalar dependencias externas
+- No requiere CocoaPods ni SPM
 
 ---
 
@@ -81,16 +150,24 @@ cd suri-firuvet
 open "Suri Firuvet.xcodeproj"
 ```
 
-Una vez abierto en Xcode, selecciona un simulador o dispositivo físico y presiona `Cmd + R` para compilar y ejecutar.
+Selecciona un simulador o dispositivo físico y presiona `Cmd + R` para compilar y ejecutar.
 
 ---
 
-## Estructura de navegación
+## Documentación técnica
 
-La navegación está definida completamente en `Main.storyboard` usando **Segues** de UIKit, siguiendo el flujo estándar de una app iOS con `UINavigationController`.
+La carpeta `docs/` contiene documentación detallada por módulo:
+
+| Archivo | Contenido |
+|---|---|
+| [`docs/index.md`](docs/index.md) | Índice general y resumen de tecnologías |
+| [`docs/autenticacion.md`](docs/autenticacion.md) | Login y registro |
+| [`docs/perfil_personal.md`](docs/perfil_personal.md) | Perfil del usuario |
+| [`docs/mascotas.md`](docs/mascotas.md) | Gestión de mascotas |
+| [`docs/citas.md`](docs/citas.md) | Gestión de citas |
 
 ---
 
 ## Estado del proyecto
 
-> Versión 3 — Proyecto en desarrollo. Las carpetas `modelo/`, `estructuras/`, `protocolos/` y `celdas/` están preparadas para escalar la arquitectura conforme se integre la lógica de negocio y conexión con servicios externos.
+> Versión 3 — En desarrollo activo. Autenticación, perfil, mascotas y citas implementados. Módulos de beneficios, configuración y términos pendientes.

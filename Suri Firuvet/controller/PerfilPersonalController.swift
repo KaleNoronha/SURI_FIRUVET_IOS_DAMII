@@ -7,32 +7,41 @@ class PerfilPersonalController: UIViewController {
     @IBOutlet weak var imgListaDeMascotas: UIImageView!
     @IBOutlet weak var imgPerfilPersonal: UIImageView!
     @IBOutlet weak var imgVolver: UIImageView!
-
+    
+    @IBOutlet weak var txtApellido: UITextField!
     @IBOutlet weak var txtNombreCompleto: UITextField!
-    @IBOutlet weak var txtFechaNacimiento: UITextField!
+    @IBOutlet weak var dpFechaNacimiento: UIDatePicker!
     @IBOutlet weak var txtCorreoElectronico: UITextField!
     @IBOutlet weak var txtTelefono: UITextField!
-    @IBOutlet weak var txtDireccion: UITextField!
+
 
     private let db = Firestore.firestore()
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        dpFechaNacimiento.datePickerMode = .date
+        dpFechaNacimiento.locale = Locale(identifier: "es_PE")
+        dpFechaNacimiento.maximumDate = Date()
         setupTapGestures()
         cargarDatosUsuario()
     }
 
-    // MARK: - Cargar datos desde Firestore
     private func cargarDatosUsuario() {
         guard let uid = Auth.auth().currentUser?.uid else { return }
         db.collection("usuarios").document(uid).getDocument { [weak self] snapshot, error in
             guard let self, let data = snapshot?.data(), error == nil else { return }
             DispatchQueue.main.async {
                 self.txtNombreCompleto.text  = data["nombre"] as? String ?? ""
-                self.txtFechaNacimiento.text = data["fechaNacimiento"] as? String ?? ""
                 self.txtCorreoElectronico.text = data["email"] as? String ?? ""
                 self.txtTelefono.text = data["telefono"] as? String ?? ""
-                self.txtDireccion.text = data["direccion"] as? String ?? ""
+                self.txtApellido.text = data["apellido"] as? String ?? ""
+                if let fechaStr = data["fechaNacimiento"] as? String {
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "dd/MM/yyyy"
+                    if let fecha = formatter.date(from: fechaStr) {
+                        self.dpFechaNacimiento.date = fecha
+                    }
+                }
             }
         }
     }
@@ -41,9 +50,11 @@ class PerfilPersonalController: UIViewController {
         guard let uid = Auth.auth().currentUser?.uid else { return }
 
         let nombre = txtNombreCompleto.text?.trimmingCharacters(in: .whitespaces) ?? ""
-        let fecha = txtFechaNacimiento.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yyyy"
+        let fecha = formatter.string(from: dpFechaNacimiento.date)
         let telefono = txtTelefono.text?.trimmingCharacters(in: .whitespaces) ?? ""
-        let direccion = txtDireccion.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        let apellido = txtApellido.text?.trimmingCharacters(in: .whitespaces) ?? ""
 
         guard !nombre.isEmpty else {
             mostrarAlerta(mensaje: "El nombre no puede estar vacío.")
@@ -54,7 +65,7 @@ class PerfilPersonalController: UIViewController {
             "nombre": nombre,
             "fechaNacimiento": fecha,
             "telefono": telefono,
-            "direccion": direccion
+            "apellido": apellido
         ]) { [weak self] error in
             DispatchQueue.main.async {
                 if let error {
@@ -84,7 +95,11 @@ class PerfilPersonalController: UIViewController {
         guard let viewTapped = sender.view else { return }
         switch viewTapped {
         case imgVolver:
-            navigationController?.popViewController(animated: true) ?? { dismiss(animated: true) }()
+            if let nav = navigationController {
+                nav.popViewController(animated: true)
+            } else {
+                dismiss(animated: true)
+            }
         case imgListaDeMascotas:
             navegarA(identificador: "ListaMascotasController")
         case imgPerfilPersonal:
