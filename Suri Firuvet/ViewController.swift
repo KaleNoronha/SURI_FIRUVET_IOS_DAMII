@@ -1,5 +1,6 @@
 import UIKit
 import FirebaseAuth
+import FirebaseFirestore
 
 class ViewController: UIViewController {
     @IBOutlet weak var txtCorreoUsuario: UITextField!
@@ -62,19 +63,50 @@ class ViewController: UIViewController {
                 return
             }
 
-            let nombre = user.displayName ?? email.components(separatedBy: "@").first ?? "Usuario"
+            // Guardar uid inmediatamente
+            UserDefaults.standard.set(user.uid, forKey: "uid")
 
-            ClienteService.shared.sincronizarCliente(uid: user.uid, nombre: nombre, apellido: "") { syncResult in
-                DispatchQueue.main.async {
-                    self.mostrarCarga(false)
-                    UserDefaults.standard.set(user.uid, forKey: "uid")
-                    switch syncResult {
-                    case .success(let idCliente):
-                        UserDefaults.standard.set(idCliente, forKey: "idCliente")
+            // Obtener datos desde Firestore
+            let db = Firestore.firestore()
+            db.collection("usuarios").document(user.uid).getDocument { [weak self] snapshot, _ in
+                guard let self else { return }
+
+                let nombre = snapshot?.data()?["nombre"] as? String ?? ""
+                let partes = nombre.components(separatedBy: " ")
+                let nombCli = partes.first ?? ""
+                let apeCli = partes.dropFirst().joined(separator: " ")
+                let fecha = snapshot?.data()?["fechaNacimiento"] as? String
+
+                // Buscar si existe en la API
+                ClienteService.shared.buscarPorUid(user.uid) { result in
+                    switch result {
+                    case .success(let cliente):
+                        if let cliente = cliente, let id = cliente.id {
+                            // Ya existe, guardar id y navegar
+                            DispatchQueue.main.async {
+                                UserDefaults.standard.set(id, forKey: "idCliente")
+                                self.mostrarCarga(false)
+                                self.irASiguientePantalla()
+                            }
+                        } else {
+                            // No existe, crear cliente
+                            let req = ClienteRequest(nombCli: nombCli, apeCli: apeCli, fecNac: fecha, uid: user.uid)
+                            ClienteService.shared.crearCliente(req) { createResult in
+                                DispatchQueue.main.async {
+                                    self.mostrarCarga(false)
+                                    if case .success(let nuevo) = createResult {
+                                        UserDefaults.standard.set(nuevo.id ?? 0, forKey: "idCliente")
+                                    }
+                                    self.irASiguientePantalla()
+                                }
+                            }
+                        }
                     case .failure:
-                        break
+                        DispatchQueue.main.async {
+                            self.mostrarCarga(false)
+                            self.irASiguientePantalla()
+                        }
                     }
-                    self.irASiguientePantalla()
                 }
             }
         }

@@ -14,12 +14,41 @@ class RegistrarCuentaController: UIViewController {
     @IBOutlet weak var btnVolverIniciarSesion: UIButton!
 
     private let spinner = UIActivityIndicatorView(style: .large)
+    private let datePicker = UIDatePicker()
 
     override func viewDidLoad() {
         super.viewDidLoad()
         txtContrasenia.isSecureTextEntry = true
         txtRepetirContrasenia.isSecureTextEntry = true
         configurarSpinner()
+        configurarDatePicker()
+    }
+
+    private func configurarDatePicker() {
+        datePicker.datePickerMode = .date
+        datePicker.preferredDatePickerStyle = .wheels
+        datePicker.locale = Locale(identifier: "es_PE")
+        datePicker.maximumDate = Date()
+        datePicker.addTarget(self, action: #selector(fechaCambiada), for: .valueChanged)
+        txtFechaNacimiento.inputView = datePicker
+
+        let toolbar = UIToolbar()
+        toolbar.sizeToFit()
+        let btnDone = UIBarButtonItem(title: "Listo", style: .done, target: self, action: #selector(cerrarDatePicker))
+        toolbar.setItems([UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil), btnDone], animated: false)
+        txtFechaNacimiento.inputAccessoryView = toolbar
+        txtFechaNacimiento.tintColor = .clear
+    }
+
+    @objc private func fechaCambiada() {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yyyy"
+        txtFechaNacimiento.text = formatter.string(from: datePicker.date)
+    }
+
+    @objc private func cerrarDatePicker() {
+        fechaCambiada()
+        txtFechaNacimiento.resignFirstResponder()
     }
 
     private func configurarSpinner() {
