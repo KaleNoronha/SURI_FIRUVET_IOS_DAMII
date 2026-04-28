@@ -1,19 +1,23 @@
 import Foundation
 
 struct CitaDTO: Codable {
-    let id: Int?
-    let mascota: String?
-    let fechaHora: String?
-    let lugar: String?
-    let tipo: String?
+    let idCita: Int?
+    let nombreTipoCita: String?
+    let fecha: String?
     let comentario: String?
+    let idMascota: Int?
+    let nombreMascota: String?
+    let idCliente: Int?
+    let nombreCliente: String?
+    let idClinica: Int?
+    let nombreClinica: String?
+}
 
-    enum CodingKeys: String, CodingKey {
-        case id
-        case mascota
-        case fechaHora = "fecha_hora"
-        case lugar
-        case tipo
-        case comentario
-    }
+struct CrearCitaRequest: Codable {
+    let uid: String
+    let idTipoCita: Int
+    let fecha: String
+    let comentario: String?
+    let idMascota: Int
+    let idClinica: Int
 }

@@ -65,6 +65,13 @@ class RegistrarCuentaController: UIViewController {
                     self.mostrarAlerta(mensaje: "Cuenta creada pero error al guardar datos: \(error.localizedDescription)")
                     return
                 }
+                // Crear cliente en PostgreSQL
+                let partes = nombre.components(separatedBy: " ")
+                let nombCli = partes.first ?? nombre
+                let apeCli = partes.dropFirst().joined(separator: " ")
+                let req = ClienteRequest(nombCli: nombCli, apeCli: apeCli, fecNac: fecha, uid: uid)
+                ClienteService.shared.crearCliente(req) { _ in }
+
                 self.mostrarAlerta(mensaje: "Cuenta creada correctamente.") {
                     self.irAPantallaLogin()
                 }

@@ -1,23 +1,19 @@
 import UIKit
-import FirebaseAuth
-import FirebaseFirestore
 
 class ListaCitasController: UIViewController, UITableViewDataSource, UITableViewDelegate {
-    
+
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var imgListaDeMascotas: UIImageView!
     @IBOutlet weak var imgPerfilPersonal: UIImageView!
     @IBOutlet weak var imgVolver: UIImageView!
-    
-    var citas: [[String: Any]] = []
-    var citaIds: [String] = []
+
+    var citas: [CitaDTO] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
         tableView.dataSource = self
         tableView.delegate = self
         setupTapGestures()
-        cargarCitas()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -26,12 +22,16 @@ class ListaCitasController: UIViewController, UITableViewDataSource, UITableView
     }
 
     func cargarCitas() {
-        guard let uid = Auth.auth().currentUser?.uid else { return }
-        CoreDataManager.shared.obtenerCitas(uid: uid) { [weak self] documentos in
+        let uid = UserDefaults.standard.string(forKey: "uid") ?? ""
+        CitaService.shared.listarCitas(uid: uid) { [weak self] result in
             DispatchQueue.main.async {
-                self?.citas = documentos.map { $0.data() }
-                self?.citaIds = documentos.map { $0.documentID }
-                self?.tableView.reloadData()
+                switch result {
+                case .success(let citas):
+                    self?.citas = citas
+                    self?.tableView.reloadData()
+                case .failure(let error):
+                    self?.mostrarMensaje(titulo: "Error", mensaje: error.localizedDescription)
+                }
             }
         }
     }
@@ -44,12 +44,8 @@ class ListaCitasController: UIViewController, UITableViewDataSource, UITableView
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "CitaCell", for: indexPath) as! CitaTableViewCell
         let cita = citas[indexPath.row]
-        cell.lblMascota.text = cita["mascota"] as? String ?? ""
-        if let timestamp = cita["fechaHora"] as? Timestamp {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "dd/MM/yyyy HH:mm"
-            cell.lblFechaHora.text = "Fecha: \(formatter.string(from: timestamp.dateValue()))"
-        }
+        cell.lblMascota.text = cita.nombreMascota ?? "Mascota"
+        cell.lblFechaHora.text = "Fecha: \(cita.fecha ?? "")"
         return cell
     }
 
@@ -61,11 +57,17 @@ class ListaCitasController: UIViewController, UITableViewDataSource, UITableView
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         guard segue.identifier == "irDetalleCita", let index = sender as? Int else { return }
         let destino = segue.destination as! DetallesCitaController
-        destino.citaData = citas[index]
-        destino.citaId = citaIds[index]
+        destino.cita = citas[index]
     }
 
-    // MARK: - Gestos
+    // MARK: - Utilidades
+    func mostrarMensaje(titulo: String, mensaje: String) {
+        let alerta = UIAlertController(title: titulo, message: mensaje, preferredStyle: .alert)
+        alerta.addAction(UIAlertAction(title: "Aceptar", style: .default))
+        present(alerta, animated: true)
+    }
+
+    // MARK: - Navegación
     private func setupTapGestures() {
         let imagenes = [imgListaDeMascotas, imgPerfilPersonal, imgVolver]
         for imagen in imagenes {
@@ -73,7 +75,7 @@ class ListaCitasController: UIViewController, UITableViewDataSource, UITableView
             imagen?.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(imagenTapped(_:))))
         }
     }
-    
+
     @objc func imagenTapped(_ sender: UITapGestureRecognizer) {
         guard let viewTapped = sender.view else { return }
         switch viewTapped {
@@ -86,7 +88,7 @@ class ListaCitasController: UIViewController, UITableViewDataSource, UITableView
         default: break
         }
     }
-    
+
     private func navegarA(identificador: String) {
         guard let vc = storyboard?.instantiateViewController(withIdentifier: identificador) else { return }
         navigationController?.pushViewController(vc, animated: true) ?? { present(vc, animated: true) }()

@@ -1273,6 +1273,9 @@
                                 <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="2.2250738585072014e-308" maxY="0.0"/>
                                 <state key="normal" title="Volver"/>
                                 <buttonConfiguration key="configuration" style="filled" title="Eliminar Cita"/>
+                                <connections>
+                                    <action selector="btnEliminarCita:" destination="OZM-27-kyz" eventType="touchUpInside" id="act-el-001"/>
+                                </connections>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="t3l-UC-FAK">
                                 <rect key="frame" x="202" y="680" width="166" height="35"/>
@@ -1280,7 +1283,10 @@
                                 <color key="tintColor" red="0.1607843041" green="0.1607843041" blue="0.1607843041" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                                 <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="2.2250738585072014e-308" maxY="0.0"/>
                                 <state key="normal" title="Volver"/>
-                                <buttonConfiguration key="configuration" style="filled" title="Ver Ubicacion"/>
+                                <buttonConfiguration key="configuration" style="filled" title="Modificar Cita"/>
+                                <connections>
+                                    <action selector="btnModificarCita:" destination="OZM-27-kyz" eventType="touchUpInside" id="act-mo-002"/>
+                                </connections>
                             </button>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="eXw-hk-q7g"/>
@@ -1291,6 +1297,8 @@
                         <outlet property="imgListaDeMascotas" destination="IND-vx-WUx" id="ZBh-9J-sO7"/>
                         <outlet property="imgPerfilPersonal" destination="tGu-24-V0t" id="QCU-Qq-7Em"/>
                         <outlet property="imgVolver" destination="Uew-tL-bx7" id="dqn-CI-Xdc"/>
+                        <outlet property="btnEliminar" destination="NOF-7B-JPN" id="btn-el-001"/>
+                        <outlet property="btnModificar" destination="t3l-UC-FAK" id="btn-mo-002"/>
                         <outlet property="lblComentario" destination="0NJ-6c-pbn" id="eE5-qF-gH6"/>
                         <outlet property="lblFechaHora" destination="uQe-fW-TNA" id="dD4-pE-fG5"/>
                         <outlet property="lblLugar" destination="KLb-16-pG9" id="bB2-nC-dE3"/>

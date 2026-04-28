@@ -1,7 +1,7 @@
 import UIKit
-import FirebaseFirestore
 
 class DetallesCitaController: UIViewController {
+
     @IBOutlet weak var imgListaDeMascotas: UIImageView!
     @IBOutlet weak var imgPerfilPersonal: UIImageView!
     @IBOutlet weak var imgVolver: UIImageView!
@@ -12,8 +12,7 @@ class DetallesCitaController: UIViewController {
     @IBOutlet weak var lblTipo: UILabel!
     @IBOutlet weak var lblComentario: UILabel!
 
-    var citaData: [String: Any] = [:]
-    var citaId: String = ""
+    var cita: CitaDTO?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -22,17 +21,83 @@ class DetallesCitaController: UIViewController {
     }
 
     private func cargarDatos() {
-        lblMascota.text = citaData["mascota"] as? String ?? ""
-        lblLugar.text = "Lugar: \(citaData["lugar"] as? String ?? "")"
-        lblTipo.text = "Tipo: \(citaData["tipo"] as? String ?? "")"
-        lblComentario.text = citaData["comentario"] as? String ?? ""
-        if let timestamp = citaData["fechaHora"] as? Timestamp {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "dd/MM/yyyy HH:mm"
-            lblFechaHora.text = "Fecha: \(formatter.string(from: timestamp.dateValue()))"
-        }
+        guard let cita = cita else { return }
+        lblMascota.text = cita.nombreMascota ?? "Mascota"
+        lblFechaHora.text = cita.fecha ?? "-"
+        lblLugar.text = cita.nombreClinica ?? "-"
+        lblTipo.text = cita.nombreTipoCita ?? "-"
+        lblComentario.text = cita.comentario ?? "Sin comentario"
     }
 
+    // MARK: - Eliminar Cita
+    @IBAction func btnEliminarCita(_ sender: UIButton) {
+        guard let id = cita?.idCita else { return }
+        let uid = UserDefaults.standard.string(forKey: "uid") ?? ""
+
+        let alerta = UIAlertController(title: "Confirmar", message: "¿Deseas eliminar esta cita?", preferredStyle: .alert)
+        alerta.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
+        alerta.addAction(UIAlertAction(title: "Eliminar", style: .destructive) { _ in
+            CitaService.shared.eliminarCita(id: id, uid: uid) { [weak self] result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success:
+                        self?.mostrarMensaje(titulo: "Éxito", mensaje: "Cita eliminada correctamente") {
+                            self?.navigationController?.popViewController(animated: true)
+                        }
+                    case .failure(let error):
+                        self?.mostrarMensaje(titulo: "Error", mensaje: error.localizedDescription)
+                    }
+                }
+            }
+        })
+        present(alerta, animated: true)
+    }
+
+    // MARK: - Modificar Cita
+    @IBAction func btnModificarCita(_ sender: UIButton) {
+        guard let cita = cita, let id = cita.idCita else { return }
+        let uid = UserDefaults.standard.string(forKey: "uid") ?? ""
+
+        let ac = UIAlertController(title: "Modificar Cita", message: "Edita el comentario", preferredStyle: .alert)
+        ac.addTextField { tf in tf.text = cita.comentario }
+
+        ac.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
+        ac.addAction(UIAlertAction(title: "Guardar", style: .default) { [weak self] _ in
+            let nuevoComentario = ac.textFields?.first?.text ?? ""
+
+            let request = CrearCitaRequest(
+                uid: uid,
+                idTipoCita: cita.idCita ?? 1,
+                fecha: cita.fecha ?? "",
+                comentario: nuevoComentario,
+                idMascota: cita.idMascota ?? 1,
+                idClinica: cita.idClinica ?? 1
+            )
+
+            CitaService.shared.modificarCita(id: id, request) { result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success(let citaActualizada):
+                        self?.cita = citaActualizada
+                        self?.cargarDatos()
+                        self?.mostrarMensaje(titulo: "Éxito", mensaje: "Cita modificada correctamente")
+                    case .failure(let error):
+                        self?.mostrarMensaje(titulo: "Error", mensaje: error.localizedDescription)
+                    }
+                }
+            }
+        })
+        present(ac, animated: true)
+    }
+
+    // MARK: - Utilidades
+    func mostrarMensaje(titulo: String, mensaje: String, completion: (() -> Void)? = nil) {
+        let alerta = UIAlertController(title: titulo, message: mensaje, preferredStyle: .alert)
+        alerta.addAction(UIAlertAction(title: "Aceptar", style: .default) { _ in completion?() })
+        present(alerta, animated: true)
+    }
+
+    // MARK: - Navegación
     private func setupTapGestures() {
         let imagenes = [imgListaDeMascotas, imgPerfilPersonal, imgVolver]
         for imagen in imagenes {
