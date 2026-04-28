@@ -14,6 +14,9 @@ class DetallesCitaController: UIViewController {
 
     var cita: CitaDTO?
 
+    @IBOutlet weak var btnEliminar: UIButton!
+    @IBOutlet weak var btnModificar: UIButton!
+
     override func viewDidLoad() {
         super.viewDidLoad()
         setupTapGestures()

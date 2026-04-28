@@ -1095,6 +1095,12 @@
                         <outlet property="imgListaDeMascotas" destination="3VU-bo-ARe" id="d09-Ih-cN0"/>
                         <outlet property="imgPerfilPersonal" destination="akm-oh-h67" id="wwc-S7-d03"/>
                         <outlet property="imgVolver" destination="RHo-FW-LYW" id="dPV-71-ONq"/>
+                        <outlet property="txtNombre" destination="MjA-YQ-AL5" id="txt-nm-001"/>
+                        <outlet property="txtEspecie" destination="VJ5-OI-dWG" id="txt-es-002"/>
+                        <outlet property="txtApodos" destination="U84-MW-icF" id="txt-ap-003"/>
+                        <outlet property="txtAlergias" destination="qjd-ey-9XI" id="txt-al-004"/>
+                        <action selector="btnGuardar:" destination="Ny6-Rn-DOw" eventType="touchUpInside" id="act-gu-001"/>
+                        <action selector="btnEliminar:" destination="Ny6-Rn-DOw" eventType="touchUpInside" id="act-el-002"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="uyr-MM-zmk" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
@@ -1408,7 +1414,7 @@
                                 <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <prototypes>
-                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" rowHeight="91" id="j4Y-dh-bh0">
+                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="MascotaCell" rowHeight="91" id="j4Y-dh-bh0">
                                         <rect key="frame" x="0.0" y="50" width="383" height="91"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="j4Y-dh-bh0" id="tR4-0l-K4A">
@@ -1469,6 +1475,7 @@
                         <outlet property="imgListaDeMascotas" destination="5Mu-Hj-bhP" id="u7g-yE-nt7"/>
                         <outlet property="imgPerfilPersonal" destination="wIu-RG-ORs" id="Jc9-dq-XMO"/>
                         <outlet property="imgVolver" destination="723-BJ-W8P" id="K8K-xu-qaX"/>
+                        <outlet property="tableView" destination="R9a-1H-Ved" id="tbl-lm-001"/>
                         <segue destination="Ny6-Rn-DOw" kind="show" id="1lm-i1-EIi"/>
                     </connections>
                 </viewController>

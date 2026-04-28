@@ -137,7 +137,8 @@ class IngresarMascotaController: UIViewController, UIPickerViewDelegate, UIPicke
             DispatchQueue.main.async {
                 self?.mostrarCarga(false)
                 switch result {
-                case .success:
+                case .success(let nueva):
+                    CoreDataManager.shared.guardarMascotas([nueva], uid: uid)
                     self?.mostrarAlerta(mensaje: "Mascota registrada correctamente.") {
                         self?.limpiarCampos()
                     }
