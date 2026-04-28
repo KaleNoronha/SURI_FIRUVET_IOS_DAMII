@@ -80,7 +80,11 @@ class ListaCitasController: UIViewController, UITableViewDataSource, UITableView
         guard let viewTapped = sender.view else { return }
         switch viewTapped {
         case imgVolver:
-            navigationController?.popViewController(animated: true) ?? { dismiss(animated: true) }()
+            if let nav = navigationController {
+                nav.popViewController(animated: true)
+            } else {
+                dismiss(animated: true)
+            }
         case imgListaDeMascotas:
             navegarA(identificador: "ListaMascotasController")
         case imgPerfilPersonal:

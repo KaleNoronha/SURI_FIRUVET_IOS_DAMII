@@ -106,7 +106,7 @@ class CrearCitaController: UIViewController, UIPickerViewDelegate, UIPickerViewD
             idTipoCita: tiposCita[tipoIndex].id,
             fecha: formatter.string(from: dpFechaHora?.date ?? Date()),
             comentario: txtComentario?.text,
-            idMascota: mascotas[mascotaIndex].id,
+            idMascota: mascotas[mascotaIndex].id!,
             idClinica: clinicas[clinicaIndex].id
         )
 
@@ -150,7 +150,11 @@ class CrearCitaController: UIViewController, UIPickerViewDelegate, UIPickerViewD
         guard let view = sender.view else { return }
         switch view {
         case imgVolver:
-            navigationController?.popViewController(animated: true) ?? { dismiss(animated: true) }()
+            if let nav = navigationController {
+                nav.popViewController(animated: true)
+            } else {
+                dismiss(animated: true)
+            }
         case imgListaDeMascotas:
             navegarA(identificador: "ListaMascotasController")
         case imgPerfilPersonal:

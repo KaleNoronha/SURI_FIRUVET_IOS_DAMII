@@ -10,6 +10,7 @@ class IngresarMascotaController: UIViewController, UIPickerViewDelegate, UIPicke
     @IBOutlet weak var txtAlergias: UITextField!
     @IBOutlet weak var txtApodosMascota: UITextField!
     @IBOutlet weak var btnRegistrarMascota: UIButton!
+    
 
     private let spinner = UIActivityIndicatorView(style: .large)
     private let pickerEspecie = UIPickerView()
@@ -57,7 +58,12 @@ class IngresarMascotaController: UIViewController, UIPickerViewDelegate, UIPicke
 
         let toolbar = UIToolbar()
         toolbar.sizeToFit()
-        let btnDone = UIBarButtonItem(title: "Listo", style: .done, target: self, action: #selector(cerrarPicker))
+        let btnDone: UIBarButtonItem
+        if #available(iOS 26.0, *) {
+            btnDone = UIBarButtonItem(title: "Listo", style: .prominent, target: self, action: #selector(cerrarPicker))
+        } else {
+            btnDone = UIBarButtonItem(title: "Listo", style: .done, target: self, action: #selector(cerrarPicker))
+        }
         toolbar.setItems([UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil), btnDone], animated: false)
         txtEspecie.inputAccessoryView = toolbar
     }
@@ -161,7 +167,11 @@ class IngresarMascotaController: UIViewController, UIPickerViewDelegate, UIPicke
         guard let viewTapped = sender.view else { return }
         switch viewTapped {
         case imgVolver:
-            navigationController?.popViewController(animated: true) ?? { dismiss(animated: true) }()
+            if let nav = navigationController {
+                nav.popViewController(animated: true)
+            } else {
+                dismiss(animated: true)
+            }
         case imgListaDeMascotas:
             navegarA(identificador: "ListaMascotasController")
         case imgPerfilPersonal:
