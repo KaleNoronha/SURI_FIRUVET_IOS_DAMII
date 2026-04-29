@@ -138,7 +138,7 @@ class IngresarMascotaController: UIViewController, UIPickerViewDelegate, UIPicke
                 self?.mostrarCarga(false)
                 switch result {
                 case .success(let nueva):
-                    CoreDataManager.shared.guardarMascotas([nueva], uid: uid)
+                    CoreDataManager.shared.agregarMascotaLocal(nueva, uid: uid)
                     self?.mostrarAlerta(mensaje: "Mascota registrada correctamente.") {
                         self?.limpiarCampos()
                     }

@@ -42,7 +42,7 @@ class PerfilMascotaController: UIViewController {
     // MARK: - Eliminar mascota
     @IBAction func btnEliminar(_ sender: UIButton) {
         guard let m = mascota else { return }
-        let alerta = UIAlertController(title: "Confirmar", message: "\u00bfEliminar esta mascota?", preferredStyle: .alert)
+        let alerta = UIAlertController(title: "Confirmar", message: "\u{00BF}Eliminar esta mascota?", preferredStyle: .alert)
         alerta.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
         alerta.addAction(UIAlertAction(title: "Eliminar", style: .destructive) { [weak self] _ in
             CoreDataManager.shared.eliminarMascotaLocal(idRemoto: m.idRemoto)
@@ -53,7 +53,7 @@ class PerfilMascotaController: UIViewController {
 
     private func mostrarAlerta(mensaje: String) {
         let alerta = UIAlertController(title: "Aviso", message: mensaje, preferredStyle: .alert)
-        alerta.addAction(UIAlertAction(title: "OK", style: .default))
+        alerta.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
         present(alerta, animated: true)
     }
 
@@ -70,7 +70,11 @@ class PerfilMascotaController: UIViewController {
         guard let viewTapped = sender.view else { return }
         switch viewTapped {
         case imgVolver:
-            navigationController?.popViewController(animated: true) ?? { dismiss(animated: true) }()
+            if let nav = navigationController {
+                nav.popViewController(animated: true)
+            } else {
+                dismiss(animated: true)
+            }
         case imgListaDeMascotas:
             navegarA(identificador: "ListaMascotasController")
         case imgPerfilPersonal:

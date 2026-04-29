@@ -1,4 +1,5 @@
 import UIKit
+import FirebaseAuth
 
 class MenuPrincipalController: UIViewController {
     @IBOutlet weak var imgCrearCita: UIImageView!
@@ -31,11 +32,7 @@ class MenuPrincipalController: UIViewController {
         
         switch viewTapped {
         case imgVolver:
-            if let nav = navigationController {
-                nav.popViewController(animated: true)
-            } else {
-                dismiss(animated: true)
-            }
+            cerrarSesion()
             
         case imgCrearCita:
             navegarA(identificador: "CrearCitaController")
@@ -57,6 +54,17 @@ class MenuPrincipalController: UIViewController {
         }
     }
     
+    private func cerrarSesion() {
+        try? Auth.auth().signOut()
+        UserDefaults.standard.removeObject(forKey: "uid")
+        UserDefaults.standard.removeObject(forKey: "idCliente")
+        if let nav = navigationController {
+            nav.popToRootViewController(animated: true)
+        } else {
+            dismiss(animated: true)
+        }
+    }
+
     private func navegarA(identificador: String) {
         guard let vc = storyboard?.instantiateViewController(withIdentifier: identificador) else {
             print("Error: No se encontro el ID \(identificador)")

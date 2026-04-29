@@ -14,6 +14,8 @@ class ListaMascotasController: UIViewController, UITableViewDataSource, UITableV
         super.viewDidLoad()
         tableView.dataSource = self
         tableView.delegate   = self
+        tableView.rowHeight = 154
+        tableView.estimatedRowHeight = 154
         setupTapGestures()
     }
 
@@ -22,10 +24,18 @@ class ListaMascotasController: UIViewController, UITableViewDataSource, UITableV
         cargarMascotas()
     }
 
-    // MARK: - Carga desde Core Data
+    // MARK: - Carga desde API + Core Data
     private func cargarMascotas() {
-        mascotas = CoreDataManager.shared.obtenerMascotasLocales(uid: uid)
-        tableView.reloadData()
+        let uid = self.uid
+        MascotaService.shared.listarMascotas(uid: uid) { [weak self] result in
+            DispatchQueue.main.async {
+                if case .success(let remotas) = result, !remotas.isEmpty {
+                    CoreDataManager.shared.guardarMascotas(remotas, uid: uid)
+                }
+                self?.mascotas = CoreDataManager.shared.obtenerMascotasLocales(uid: uid)
+                self?.tableView.reloadData()
+            }
+        }
     }
 
     // MARK: - TableView
@@ -36,15 +46,22 @@ class ListaMascotasController: UIViewController, UITableViewDataSource, UITableV
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "MascotaCell", for: indexPath)
         let m = mascotas[indexPath.row]
-        cell.textLabel?.text       = m.nombre ?? "Sin nombre"
-        cell.detailTextLabel?.text = m.tipo ?? ""
+        (cell.viewWithTag(1) as? UILabel)?.text = m.nombre ?? "Sin nombre"
+        (cell.viewWithTag(2) as? UILabel)?.text = "Especie: \(m.tipo ?? "-")"
+        (cell.viewWithTag(3) as? UILabel)?.text = "Apodos: \(m.apodos ?? "-")"
+        (cell.viewWithTag(4) as? UILabel)?.text = "Alergias: \(m.alergias ?? "-")"
         return cell
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         guard let vc = storyboard?.instantiateViewController(withIdentifier: "PerfilMascotaController") as? PerfilMascotaController else { return }
         vc.mascota = mascotas[indexPath.row]
-        navigationController?.pushViewController(vc, animated: true)
+        if let nav = navigationController {
+            nav.pushViewController(vc, animated: true)
+        } else {
+            vc.modalPresentationStyle = .fullScreen
+            present(vc, animated: true)
+        }
     }
 
     // MARK: - Eliminar con swipe
@@ -69,7 +86,11 @@ class ListaMascotasController: UIViewController, UITableViewDataSource, UITableV
         guard let viewTapped = sender.view else { return }
         switch viewTapped {
         case imgVolver:
-            navigationController?.popViewController(animated: true) ?? { dismiss(animated: true) }()
+            if let nav = navigationController {
+                nav.popViewController(animated: true)
+            } else {
+                dismiss(animated: true)
+            }
         case imgListaDeMascotas:
             navegarA(identificador: "ListaMascotasController")
         case imgPerfilPersonal:

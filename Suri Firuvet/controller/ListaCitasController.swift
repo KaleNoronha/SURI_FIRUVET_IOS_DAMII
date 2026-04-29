@@ -13,6 +13,8 @@ class ListaCitasController: UIViewController, UITableViewDataSource, UITableView
         super.viewDidLoad()
         tableView.dataSource = self
         tableView.delegate = self
+        tableView.rowHeight = 129
+        tableView.estimatedRowHeight = 129
         setupTapGestures()
     }
 
@@ -44,8 +46,10 @@ class ListaCitasController: UIViewController, UITableViewDataSource, UITableView
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "CitaCell", for: indexPath) as! CitaTableViewCell
         let cita = citas[indexPath.row]
-        cell.lblMascota.text = cita.nombreMascota ?? "Mascota"
-        cell.lblFechaHora.text = "Fecha: \(cita.fecha ?? "")"
+        cell.lblMascota.text   = cita.nombreMascota ?? "Mascota"
+        cell.lblFechaHora.text  = "Fecha: \(cita.fecha ?? "")"
+        cell.lblClinica.text    = "Clínica: \(cita.nombreClinica ?? "-")"
+        cell.lblTipo.text       = "Tipo: \(cita.nombreTipoCita ?? "-")"
         return cell
     }
 

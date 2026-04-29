@@ -45,7 +45,18 @@ class DetallesCitaController: UIViewController {
                     switch result {
                     case .success:
                         self?.mostrarMensaje(titulo: "Éxito", mensaje: "Cita eliminada correctamente") {
-                            self?.navigationController?.popViewController(animated: true)
+                            guard let self = self else { return }
+                            if let nav = self.navigationController {
+                                let vcs = nav.viewControllers
+                                if let lista = vcs.first(where: { $0 is ListaCitasController }) {
+                                    nav.popToViewController(lista, animated: true)
+                                } else {
+                                    nav.popViewController(animated: true)
+                                }
+                            } else {
+                                let vc = self.storyboard?.instantiateViewController(withIdentifier: "ListaCitasController")
+                                vc.map { $0.modalPresentationStyle = .fullScreen; self.present($0, animated: true) }
+                            }
                         }
                     case .failure(let error):
                         self?.mostrarMensaje(titulo: "Error", mensaje: error.localizedDescription)
@@ -113,7 +124,11 @@ class DetallesCitaController: UIViewController {
         guard let viewTapped = sender.view else { return }
         switch viewTapped {
         case imgVolver:
-            navigationController?.popViewController(animated: true) ?? { dismiss(animated: true) }()
+            if let nav = navigationController {
+                nav.popViewController(animated: true)
+            } else {
+                dismiss(animated: true)
+            }
         case imgListaDeMascotas:
             navegarA(identificador: "ListaMascotasController")
         case imgPerfilPersonal:

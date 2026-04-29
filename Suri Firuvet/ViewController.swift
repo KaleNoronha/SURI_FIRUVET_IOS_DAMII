@@ -16,6 +16,12 @@ class ViewController: UIViewController {
         configurarSpinner()
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        txtCorreoUsuario.text = ""
+        txtContrasenia.text = ""
+    }
+
     private func configurarSpinner() {
         spinner.color = .white
         spinner.translatesAutoresizingMaskIntoConstraints = false
