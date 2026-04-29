@@ -16,8 +16,16 @@ class CoreDataManager {
     // MARK: - Core Data Stack
     private lazy var persistentContainer: NSPersistentContainer = {
         let container = NSPersistentContainer(name: "SuriFiruvet")
-        container.loadPersistentStores { _, error in
-            if let error { print("CoreData error: \(error)") }
+        container.persistentStoreDescriptions.first?.shouldMigrateStoreAutomatically = true
+        container.persistentStoreDescriptions.first?.shouldInferMappingModelAutomatically = true
+        container.loadPersistentStores { desc, error in
+            guard let error = error as NSError? else { return }
+            // Si el store es incompatible, lo destruye y recrea vacío
+            if let url = desc.url {
+                try? NSPersistentStoreCoordinator(managedObjectModel: container.managedObjectModel)
+                    .destroyPersistentStore(at: url, ofType: desc.type)
+            }
+            container.loadPersistentStores { _, _ in }
         }
         return container
     }()
@@ -72,22 +80,31 @@ class CoreDataManager {
 
     // MARK: - Mascotas (Core Data local)
     func guardarMascotas(_ mascotas: [MascotaDTO], uid: String) {
-        // Borra las anteriores del mismo uid
-        let fetch: NSFetchRequest<NSFetchRequestResult> = MascotaEntity.fetchRequest()
+        let context = persistentContainer.viewContext
+        let fetch: NSFetchRequest<MascotaEntity> = MascotaEntity.fetchRequest()
         fetch.predicate = NSPredicate(format: "uid == %@", uid)
-        let delete = NSBatchDeleteRequest(fetchRequest: fetch)
-        try? context.execute(delete)
+        let existentes = (try? context.fetch(fetch)) ?? []
+        existentes.forEach { context.delete($0) }
 
         for m in mascotas {
-            let entity = MascotaEntity(context: context)
-            entity.idRemoto  = Int32(m.id ?? 0)
-            entity.nombre    = m.nombMas
-            entity.tipo      = m.nombreTipo
-            entity.apodos    = m.apodos
-            entity.alergias  = m.alergias
-            entity.uid       = uid
+            agregarEntidad(m, uid: uid)
         }
         saveContext()
+    }
+
+    func agregarMascotaLocal(_ mascota: MascotaDTO, uid: String) {
+        agregarEntidad(mascota, uid: uid)
+        saveContext()
+    }
+
+    private func agregarEntidad(_ m: MascotaDTO, uid: String) {
+        let entity = MascotaEntity(context: context)
+        entity.idRemoto = Int32(m.id ?? 0)
+        entity.nombre   = m.nombMas
+        entity.tipo     = m.nombreTipo
+        entity.apodos   = m.apodos
+        entity.alergias = m.alergias
+        entity.uid      = uid
     }
 
     func obtenerMascotasLocales(uid: String) -> [MascotaEntity] {
